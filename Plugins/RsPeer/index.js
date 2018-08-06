@@ -16,9 +16,8 @@ const RsPeer = {
 				console.log("Logging in.");
 				if(loginToken) {
 					await loginService.loginWithToken(req, req.query.idToken, next);
-				} else {
-					next();
 				}
+				next();
 			} else {
         		next();
 			}

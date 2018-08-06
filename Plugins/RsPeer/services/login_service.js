@@ -27,7 +27,7 @@ LoginService.onLoginBuild = async (data, callback) => {
 	callback(null, data);
 };
 
-LoginService.loginWithToken = async (req, token, next) => {
+LoginService.loginWithToken = async (req, token) => {
 
 	const lookupUser = (email) => new Promise((res, rej) => {
 		User.getUidByEmail(email, (err, uid) => {
@@ -37,7 +37,7 @@ LoginService.loginWithToken = async (req, token, next) => {
 	});
 
 	const login = (userId) => new Promise((res, rej) => {
-		req.login({uid: userId}, next);
+		req.login({uid: userId});
 		Auth.onSuccessfulLogin(req, userId, (err) => {
 			if (err) res(err);
 			console.log("Logged in with: " + userId);
