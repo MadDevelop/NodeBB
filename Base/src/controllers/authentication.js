@@ -309,7 +309,6 @@ authenticationController.doLogin = function (req, uid, callback) {
 			req.login({ uid: uid }, next);
 		},
 		function (next) {
-			console.log('hee');
 			authenticationController.onSuccessfulLogin(req, uid, next);
 		},
 	], callback);
