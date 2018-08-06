@@ -41,6 +41,7 @@ LoginService.loginWithToken = async (req, token, next) => {
 	const login = (userId) => new Promise((res, rej) => {
 		req.login({uid: userId}, next);
 		Auth.onSuccessfulLogin(req, userId, (err) => {
+			console.log(err);
 			if (err) res(err);
 			console.log("Logged in with: " + userId);
 			res();

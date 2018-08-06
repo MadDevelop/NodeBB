@@ -14,7 +14,7 @@ var ssoUrl = atob(decodeURIComponent(cookie("sso_url")));
 
 $(window).on('action:ajaxify.end', function (data) {
 	var page = data.target.ajaxify.currentPage;
-	if (page === "login") {
+	if (page === "login" || page === "register") {
 		window.location.replace(ssoUrl + "?redirect=" + window.location.origin);
 	}
 });
