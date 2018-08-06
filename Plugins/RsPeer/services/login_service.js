@@ -37,12 +37,14 @@ LoginService.loginWithToken = async (req, token) => {
 	});
 
 	const login = (userId) => new Promise((res, rej) => {
-		req.login({uid: userId});
-		Auth.onSuccessfulLogin(req, userId, (err) => {
-			if (err) res(err);
-			console.log("Logged in with: " + userId);
-			res();
-		})
+		req.login({uid: userId}, function () {
+			Auth.onSuccessfulLogin(req, userId, (err) => {
+				if (err) res(err);
+				console.log("Logged in with: " + userId);
+				res();
+			})
+		});
+
 	});
 
 	const user = await rp(`${nconf.get("rspeerApi")}/user/me`, {
