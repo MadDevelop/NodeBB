@@ -4,8 +4,7 @@
   "library": "./index.js",
   "hooks": [
     { "hook": "filter:uploadImage", "method": "onImageUpload" },
-    { "hook": "filter:middleware.render", "method": "onLogin" },
-    { "hook" : "static:app.load", "method" : "onAppLoad"}
+    { "hook": "filter:router.page", "method": "onLogin" }
   ],
   "staticDirs": {
     "static": "./static"

@@ -6,21 +6,20 @@ const rp = require('request-promise');
 
 const LoginService = {};
 
-LoginService.onRouteChange = async (data, callback) => {
-
-	console.log(data.templateData);
-	const path = data.templateData.url || data.req.route.path;
-	const idToken = data.req.query.idToken;
+LoginService.onRouteChange = async (req, res, next) => {
+	console.log(req.path);
+	const idToken = req.query.idToken;
 	if(idToken) {
-		await LoginService.loginWithToken(data.req, idToken);
-		data.templateData.loggedIn = true;
-		return callback(null, data);
+		await LoginService.loginWithToken(req, idToken);
+		console.log("LOGGED IN");
+		return next();
 	}
-	if(path !== "/login2") {
-		return callback(null, data);
+	if(req.path !== "/login") {
+		return next();
 	}
 	const sso = nconf.get('ssoPath');
-	data.res.redirect(`${sso}?redirect=${nconf.get('url')}`);
+	res.redirect(`${sso}?redirect=${nconf.get('url')}`);
+	//next();
 };
 
 LoginService.onLoginBuild = async (data, callback) => {
