@@ -12,7 +12,7 @@ LoginService.onRouteChange = async (data, callback) => {
 	const path = data.templateData.url || data.req.route.path;
 	const idToken = data.req.query.idToken;
 	if(idToken) {
-		await loginWithToken(data.req, idToken);
+		await LoginService.loginWithToken(data.req, idToken);
 		data.templateData.loggedIn = true;
 		return callback(null, data);
 	}
@@ -27,8 +27,6 @@ LoginService.onLoginBuild = async (data, callback) => {
 	callback(null, data);
 };
 
-module.exports = LoginService;
-
 LoginService.loginWithToken = async (req, token, next) => {
 
 	const lookupUser = (email) => new Promise((res, rej) => {
@@ -41,7 +39,6 @@ LoginService.loginWithToken = async (req, token, next) => {
 	const login = (userId) => new Promise((res, rej) => {
 		req.login({uid: userId}, next);
 		Auth.onSuccessfulLogin(req, userId, (err) => {
-			console.log(err);
 			if (err) res(err);
 			console.log("Logged in with: " + userId);
 			res();
@@ -64,3 +61,5 @@ LoginService.loginWithToken = async (req, token, next) => {
 		console.log(e);
 	}
 };
+
+module.exports = LoginService;
