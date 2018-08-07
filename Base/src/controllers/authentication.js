@@ -12,6 +12,7 @@ var meta = require('../meta');
 var user = require('../user');
 var plugins = require('../plugins');
 var utils = require('../utils');
+var Password = require('../password');
 var translator = require('../translator');
 var helpers = require('./helpers');
 
@@ -219,6 +220,8 @@ authenticationController.login = function (req, res, next) {
 		return continueLogin(req, res, next);
 	}
 
+	console.log(req.body.username);
+
 	var loginWith = meta.config.allowLoginWith || 'username-email';
 
 	if (req.body.username && utils.isEmailValid(req.body.username) && loginWith.indexOf('email') !== -1) {
@@ -280,8 +283,6 @@ function continueLogin(req, res, next) {
 					return helpers.noScriptErrors(req, res, err.message, 403);
 				}
 
-				console.log(req.session);
-				console.log(req.body);
 				var destination;
 				if (!req.session.returnTo) {
 					destination = nconf.get('relative_path') + '/';
@@ -316,7 +317,6 @@ authenticationController.doLogin = function (req, uid, callback) {
 
 authenticationController.onSuccessfulLogin = function (req, uid, callback) {
 	var uuid = utils.generateUUID();
-
 	async.waterfall([
 		function (next) {
 			meta.blacklist.test(req.ip, next);
@@ -356,7 +356,7 @@ authenticationController.onSuccessfulLogin = function (req, uid, callback) {
 		},
 		function (next) {
 			// Force session check for all connected socket.io clients with the same session id
-			sockets.in('sess_' + req.sessionID).emit('checkSession', uid);
+			sockets.in('sess_' + req.sessionID).emit('checkSession', {uid, host : nconf.get('url')});
 
 			plugins.fireHook('action:user.loggedIn', { uid: uid, req: req });
 			next();
@@ -399,7 +399,9 @@ authenticationController.localLogin = function (req, username, password, next) {
 			uid = _uid;
 
 			async.parallel({
-				userData: async.apply(db.getObjectFields, 'user:' + uid, ['passwordExpiry']),
+				userData: function (next) {
+					db.getObjectFields('user:' + uid, ['password', 'passwordExpiry'], next);
+				},
 				isAdminOrGlobalMod: function (next) {
 					user.isAdminOrGlobalMod(uid, next);
 				},
@@ -409,10 +411,9 @@ authenticationController.localLogin = function (req, username, password, next) {
 			}, next);
 		},
 		function (result, next) {
-			userData = Object.assign(result.userData, {
-				uid: uid,
-				isAdminOrGlobalMod: result.isAdminOrGlobalMod,
-			});
+			userData = result.userData;
+			userData.uid = uid;
+			userData.isAdminOrGlobalMod = result.isAdminOrGlobalMod;
 
 			if (!result.isAdminOrGlobalMod && parseInt(meta.config.allowLocalLogin, 10) === 0) {
 				return next(new Error('[[error:local-login-disabled]]'));
@@ -422,13 +423,16 @@ authenticationController.localLogin = function (req, username, password, next) {
 				return getBanInfo(uid, next);
 			}
 
-			user.isPasswordCorrect(uid, password, req.ip, next);
+			user.auth.logAttempt(uid, req.ip, next);
+		},
+		function (next) {
+			Password.compare(password, userData.password, next);
 		},
 		function (passwordMatch, next) {
 			if (!passwordMatch) {
 				return next(new Error('[[error:invalid-login-credentials]]'));
 			}
-
+			user.auth.clearLoginAttempts(uid);
 			next(null, userData, '[[success:authentication-successful]]');
 		},
 	], next);
@@ -457,7 +461,7 @@ authenticationController.logout = function (req, res, next) {
 		},
 		function () {
 			// Force session check for all connected socket.io clients with the same session id
-			sockets.in('sess_' + req.sessionID).emit('checkSession', 0);
+			sockets.in('sess_' + req.sessionID).emit('checkSession', {uid : 0});
 			if (req.body.noscript === 'true') {
 				res.redirect(nconf.get('relative_path') + '/');
 			} else {

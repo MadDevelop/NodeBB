@@ -39,41 +39,32 @@ Controllers.errors = require('./errors');
 Controllers.composer = require('./composer');
 
 Controllers.reset = function (req, res, next) {
-	const renderReset = function (code, valid) {
-		res.render('reset_code', {
-			valid: valid,
-			displayExpiryNotice: req.session.passwordExpired,
-			code: code,
-			minimumPasswordLength: parseInt(meta.config.minimumPasswordLength, 10),
-			minimumPasswordStrength: parseInt(meta.config.minimumPasswordStrength, 10),
-			breadcrumbs: helpers.buildBreadcrumbs([
-				{
-					text: '[[reset_password:reset_password]]',
-					url: '/reset',
-				},
-				{
-					text: '[[reset_password:update_password]]',
-				},
-			]),
-			title: '[[pages:reset]]',
-		});
-		delete req.session.passwordExpired;
-	};
-
 	if (req.params.code) {
-		// Save to session and redirect
-		req.session.reset_code = req.params.code;
-		res.redirect(nconf.get('relative_path') + '/reset');
-	} else if (req.session.reset_code) {
-		// Validate and save to local variable before removing from session
-		user.reset.validate(req.session.reset_code, function (err, valid) {
-			if (err) {
-				return next(err);
-			}
-
-			renderReset(req.session.reset_code, valid);
-			delete req.session.reset_code;
-		});
+		async.waterfall([
+			function (next) {
+				user.reset.validate(req.params.code, next);
+			},
+			function (valid) {
+				res.render('reset_code', {
+					valid: valid,
+					displayExpiryNotice: req.session.passwordExpired,
+					code: req.params.code,
+					minimumPasswordLength: parseInt(meta.config.minimumPasswordLength, 10),
+					minimumPasswordStrength: parseInt(meta.config.minimumPasswordStrength, 10),
+					breadcrumbs: helpers.buildBreadcrumbs([
+						{
+							text: '[[reset_password:reset_password]]',
+							url: '/reset',
+						},
+						{
+							text: '[[reset_password:update_password]]',
+						},
+					]),
+					title: '[[pages:reset]]',
+				});
+				delete req.session.passwordExpired;
+			},
+		], next);
 	} else {
 		res.render('reset', {
 			code: null,
@@ -86,13 +77,13 @@ Controllers.reset = function (req, res, next) {
 };
 
 Controllers.login = function (req, res, next) {
-	const auth = nconf.get('ssoPath');
+	const auth = nconf.get('rspeerAuthUrl');
 	const url = nconf.get('url');
 	res.render("redirect", {redirectUrl : `${auth}?redirect=${url}`})
 };
 
 Controllers.register = function (req, res, next) {
-	const auth = nconf.get('ssoPath');
+	const auth = nconf.get('rspeerAuthUrl');
 	const url = nconf.get('url');
 	res.render("redirect", {redirectUrl : `${auth}?redirect=${url}`})
 };

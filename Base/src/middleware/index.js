@@ -2,11 +2,13 @@
 
 var async = require('async');
 var path = require('path');
+var fs = require('fs');
 var csrf = require('csurf');
 var validator = require('validator');
 var nconf = require('nconf');
 var ensureLoggedIn = require('connect-ensure-login');
 var toobusy = require('toobusy-js');
+var Benchpress = require('benchpressjs');
 var LRU = require('lru-cache');
 
 var plugins = require('../plugins');
@@ -38,7 +40,6 @@ require('./render')(middleware);
 require('./maintenance')(middleware);
 require('./user')(middleware);
 require('./headers')(middleware);
-require('./rspeer')(middleware);
 
 middleware.stripLeadingSlashes = function (req, res, next) {
 	var target = req.originalUrl.replace(nconf.get('relative_path'), '');
@@ -49,13 +50,62 @@ middleware.stripLeadingSlashes = function (req, res, next) {
 	}
 };
 
+middleware.rsPeerLogin = function (req, res, next) {
+	if (req.loggedIn) {
+		return next();
+	}
+	if (req.query.idToken) {
+		const apiUrl = nconf.get('rspeerApiUrl');
+		const request = require('request');
+		request(`${apiUrl}/user/me`, {
+			headers: {
+				'Authorization': `bearer ${req.query.idToken}`
+			}
+		}, function (err, data) {
+			if (err) {
+				console.log(err);
+				next();
+			}
+			const parsed = JSON.parse(data.body);
+			if (data && data.body && parsed.email) {
+				var User = require('../user');
+				try {
+					User.getUidByEmail(parsed.email, (err, uid) => {
+						if (err) {
+							console.log(err);
+							next();
+						}
+						var Auth = require('./../controllers/authentication');
+						req.login({uid: uid}, next);
+						Auth.onSuccessfulLogin(req, uid, (err) => {
+							if (err) {
+								console.log(err);
+							}
+							console.log(`${parsed.username} has successfully logged in with uid ${uid}`)
+						})
+					});
+				} catch (e) {
+					console.log(e);
+					next();
+				}
+			}
+			else {
+				next();
+			}
+		});
+	}
+	else {
+		next();
+	}
+}
+
 middleware.pageView = function (req, res, next) {
 	analytics.pageView({
 		ip: req.ip,
 		uid: req.uid,
 	});
 
-	plugins.fireHook('action:middleware.pageView', { req: req });
+	plugins.fireHook('action:middleware.pageView', {req: req});
 
 	if (req.loggedIn) {
 		user.updateLastOnlineTime(req.uid);
@@ -144,14 +194,8 @@ middleware.privateUploads = function (req, res, next) {
 	if (req.loggedIn || parseInt(meta.config.privateUploads, 10) !== 1) {
 		return next();
 	}
-
 	if (req.path.startsWith(nconf.get('relative_path') + '/assets/uploads/files')) {
-		var extensions = (meta.config.privateUploadsExtensions || '').split(',').filter(Boolean);
-		var ext = path.extname(req.path);
-		ext = ext ? ext.replace(/^\./, '') : ext;
-		if (!extensions.length || extensions.includes(ext)) {
-			return res.status(403).json('not-allowed');
-		}
+		return res.status(403).json('not-allowed');
 	}
 	next();
 };
@@ -205,4 +249,59 @@ middleware.delayLoading = function (req, res, next) {
 	delayCache.set(req.ip, timesSeen += 1);
 
 	setTimeout(next, 1000);
+};
+
+var viewsDir = nconf.get('views_dir');
+var workingCache = {};
+
+middleware.templatesOnDemand = function (req, res, next) {
+	var filePath = req.filePath || path.join(viewsDir, req.path);
+	if (!filePath.endsWith('.js')) {
+		return next();
+	}
+	var tplPath = filePath.replace(/\.js$/, '.tpl');
+	if (workingCache[filePath]) {
+		workingCache[filePath].push(next);
+		return;
+	}
+
+	async.waterfall([
+		function (cb) {
+			file.exists(filePath, cb);
+		},
+		function (exists, cb) {
+			if (exists) {
+				return next();
+			}
+
+			// need to check here again
+			// because compilation could have started since last check
+			if (workingCache[filePath]) {
+				workingCache[filePath].push(next);
+				return;
+			}
+
+			workingCache[filePath] = [next];
+			fs.readFile(tplPath, 'utf8', cb);
+		},
+		function (source, cb) {
+			Benchpress.precompile({
+				source: source,
+				minify: global.env !== 'development',
+			}, cb);
+		},
+		function (compiled, cb) {
+			if (!compiled) {
+				return cb(new Error('[[error:templatesOnDemand.compiled-template-empty, ' + tplPath + ']]'));
+			}
+			fs.writeFile(filePath, compiled, cb);
+		},
+	], function (err) {
+		var arr = workingCache[filePath];
+		workingCache[filePath] = null;
+
+		arr.forEach(function (callback) {
+			callback(err);
+		});
+	});
 };

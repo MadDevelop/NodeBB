@@ -22,6 +22,7 @@ module.exports = function (Groups) {
 	Groups.cache = cache;
 
 	Groups.join = function (groupName, uid, callback) {
+		console.log(groupName, uid);
 		callback = callback || function () {};
 
 		if (!groupName) {
@@ -69,6 +70,7 @@ module.exports = function (Groups) {
 				}, next);
 			},
 			function (results, next) {
+			console.log("ADDING TO GROUP!")
 				var tasks = [
 					async.apply(db.sortedSetAdd, 'group:' + groupName + ':members', Date.now(), uid),
 					async.apply(db.incrObjectField, 'group:' + groupName, 'memberCount'),
@@ -360,11 +362,14 @@ module.exports = function (Groups) {
 		if (!Array.isArray(groupNames)) {
 			groupNames = [groupNames];
 		}
+		console.log("CLEARING GROUP CACHE", uid, groupNames);
 		pubsub.publish('group:cache:del', { uid: uid, groupNames: groupNames });
 		groupNames.forEach(function (groupName) {
 			cache.del(uid + ':' + groupName);
 		});
 	}
+
+	Groups.clearCache = clearCache;
 
 	pubsub.on('group:cache:del', function (data) {
 		if (data && data.groupNames) {
@@ -436,6 +441,7 @@ module.exports = function (Groups) {
 	};
 
 	Groups.isMemberOfGroups = function (uid, groups, callback) {
+		console.log("IS MEMBER OF", uid, groups);
 		var cachedData = {};
 		function getFromCache(next) {
 			setImmediate(next, null, groups.map(function (groupName) {

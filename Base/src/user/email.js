@@ -100,16 +100,14 @@ UserEmail.sendValidationEmail = function (uid, options, callback) {
 		},
 		function (username, next) {
 			var title = meta.config.title || meta.config.browserTitle || 'NodeBB';
-			var subject = options.subject || '[[email:welcome-to, ' + title + ']]';
-			var template = options.template || 'welcome';
-			translator.translate(subject, meta.config.defaultLang, function (subject) {
+			translator.translate('[[email:welcome-to, ' + title + ']]', meta.config.defaultLang, function (subject) {
 				var data = {
 					username: username,
 					confirm_link: confirm_link,
 					confirm_code: confirm_code,
 
 					subject: subject,
-					template: template,
+					template: 'welcome',
 					uid: uid,
 				};
 
@@ -117,7 +115,7 @@ UserEmail.sendValidationEmail = function (uid, options, callback) {
 					plugins.fireHook('action:user.verify', { uid: uid, data: data });
 					next();
 				} else {
-					emailer.send(template, uid, data, next);
+					emailer.send('welcome', uid, data, next);
 				}
 			});
 		},

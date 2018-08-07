@@ -27,15 +27,7 @@ Sockets.init = function (server) {
 		path: nconf.get('relative_path') + '/socket.io',
 	});
 
-	if (nconf.get('singleHostCluster')) {
-		io.adapter(require('socket.io-adapter-cluster')({
-			client: require('./single-host-cluster'),
-		}));
-	} else if (nconf.get('redis')) {
-		io.adapter(require('../database/redis').socketAdapter());
-	} else {
-		io.adapter(db.socketAdapter());
-	}
+	io.adapter(nconf.get('redis') ? require('../database/redis').socketAdapter() : db.socketAdapter());
 
 	io.use(socketioWildcard);
 	io.use(authorize);
@@ -92,7 +84,7 @@ function onConnect(socket) {
 	}
 
 	socket.join('sess_' + socket.request.signedCookies[nconf.get('sessionKey')]);
-	io.sockets.sockets[socket.id].emit('checkSession', socket.uid);
+	io.sockets.sockets[socket.id].emit('checkSession', {uid : socket.uid});
 	io.sockets.sockets[socket.id].emit('setHostname', os.hostname());
 }
 

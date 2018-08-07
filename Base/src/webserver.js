@@ -147,7 +147,15 @@ function setupExpressApp(app, callback) {
 	app.engine('tpl', function (filepath, data, next) {
 		filepath = filepath.replace(/\.tpl$/, '.js');
 
-		Benchpress.__express(filepath, data, next);
+		middleware.templatesOnDemand({
+			filePath: filepath,
+		}, null, function (err) {
+			if (err) {
+				return next(err);
+			}
+
+			Benchpress.__express(filepath, data, next);
+		});
 	});
 	app.set('view engine', 'tpl');
 	app.set('views', viewsDir);

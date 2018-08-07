@@ -289,26 +289,22 @@ Emailer.sendViaFallback = function (data, callback) {
 function buildCustomTemplates(config) {
 	async.waterfall([
 		function (next) {
-			async.parallel({
-				templates: function (cb) {
-					Emailer.getTemplates(config, cb);
-				},
-				paths: function (cb) {
-					file.walk(viewsDir, cb);
-				},
-			}, next);
+			Emailer.getTemplates(config, next);
 		},
-		function (result, next) {
-			var templates = result.templates.filter(function (template) {
+		function (templates, next) {
+			templates = templates.filter(function (template) {
 				return template.isCustom && template.text !== prevConfig['email:custom:' + path];
 			});
-			var paths = _.fromPairs(result.paths.map(function (p) {
-				var relative = path.relative(viewsDir, p).replace(/\\/g, '/');
-				return [relative, p];
-			}));
 			async.each(templates, function (template, next) {
 				async.waterfall([
 					function (next) {
+						file.walk(viewsDir, next);
+					},
+					function (paths, next) {
+						paths = _.fromPairs(paths.map(function (p) {
+							var relative = path.relative(viewsDir, p).replace(/\\/g, '/');
+							return [relative, p];
+						}));
 						meta.templates.processImports(paths, template.path, template.text, next);
 					},
 					function (source, next) {

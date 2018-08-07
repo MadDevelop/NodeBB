@@ -42,8 +42,7 @@ categoriesController.list = function (req, res, next) {
 				data.breadcrumbs = helpers.buildBreadcrumbs([{ text: data.title }]);
 				res.locals.metaTags.push({
 					property: 'og:title',
-					content: '[[pages:categories]]',
-				});
+					content: '[[pages:categories]]'});
 			}
 
 			data.categories.forEach(function (category) {

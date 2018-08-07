@@ -169,9 +169,10 @@ define('forum/account/edit', ['forum/account/header', 'translator', 'components'
 					confirmBtn.html('<i class="fa fa-spinner fa-spin"></i>');
 					confirmBtn.prop('disabled', true);
 
-					socket.emit('user.deleteAccount', {
+					socket.emit('user.checkPassword', {
+						uid: parseInt(ajaxify.data.uid, 10),
 						password: $('#confirm-password').val(),
-					}, function (err) {
+					}, function (err, ok) {
 						function restoreButton() {
 							translator.translate('[[modules:bootbox.confirm]]', function (confirmText) {
 								confirmBtn.text(confirmText);
@@ -182,10 +183,19 @@ define('forum/account/edit', ['forum/account/header', 'translator', 'components'
 						if (err) {
 							restoreButton();
 							return app.alertError(err.message);
+						} else if (!ok) {
+							restoreButton();
+							return app.alertError('[[error:invalid-password]]');
 						}
 
 						confirmBtn.html('<i class="fa fa-check"></i>');
-						window.location.href = config.relative_path + '/';
+						socket.emit('user.deleteAccount', {}, function (err) {
+							if (err) {
+								return app.alertError(err.message);
+							}
+
+							window.location.href = config.relative_path + '/';
+						});
 					});
 
 					return false;

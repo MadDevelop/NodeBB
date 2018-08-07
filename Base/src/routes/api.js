@@ -1,5 +1,7 @@
 'use strict';
 
+const rspeerController = require("../controllers/rspeer");
+
 var express = require('express');
 
 var uploadsController = require('../controllers/uploads');
@@ -22,6 +24,11 @@ module.exports = function (app, middleware, controllers) {
 	router.get('/:type/pid/:id', controllers.api.getObject);
 	router.get('/:type/tid/:id', controllers.api.getObject);
 	router.get('/:type/cid/:id', controllers.api.getObject);
+
+
+	router.post('/rspeer/register', rspeerController.register);
+	router.post('/rspeer/addToGroup', rspeerController.addToGroup);
+	router.post('/rspeer/getGroups', rspeerController.getGroups);
 
 	router.get('/categories/:cid/moderators', controllers.api.getModerators);
 	router.get('/recent/posts/:term?', controllers.posts.getRecentPosts);
