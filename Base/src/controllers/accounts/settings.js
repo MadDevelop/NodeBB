@@ -148,9 +148,7 @@ settingsController.get = function (req, res, callback) {
 
 			var notifFreqOptions = [
 				'all',
-				'first',
 				'everyTen',
-				'threshold',
 				'logarithmic',
 				'disabled',
 			];
@@ -158,7 +156,7 @@ settingsController.get = function (req, res, callback) {
 			userData.upvoteNotifFreq = notifFreqOptions.map(function (name) {
 				return {
 					name: name,
-					selected: name === userData.settings.upvoteNotifFreq,
+					selected: name === userData.notifFreqOptions,
 				};
 			});
 

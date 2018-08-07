@@ -85,6 +85,7 @@ $(document).ready(function () {
 		$('#footer, #content').removeClass('hide').addClass('ajaxifying');
 
 		ajaxify.loadData(url, function (err, data) {
+			console.log(url);
 			if (!err || (err && err.data && (parseInt(err.data.status, 10) !== 302 && parseInt(err.data.status, 10) !== 308))) {
 				ajaxify.updateHistory(url, quiet);
 			}

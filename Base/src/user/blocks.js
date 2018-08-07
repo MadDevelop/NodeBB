@@ -1,11 +1,8 @@
 'use strict';
 
 var async = require('async');
-var LRU = require('lru-cache');
-
-
 var db = require('../database');
-var pubsub = require('../pubsub');
+var LRU = require('lru-cache');
 
 module.exports = function (User) {
 	User.blocks = {
@@ -22,34 +19,14 @@ module.exports = function (User) {
 		});
 	};
 
-	User.blocks.can = function (callerUid, blockerUid, blockeeUid, callback) {
+	User.blocks.can = function (uid, callback) {
 		// Administrators and global moderators cannot be blocked
-		async.waterfall([
-			function (next) {
-				async.parallel({
-					isCallerAdminOrMod: function (next) {
-						User.isAdminOrGlobalMod(callerUid, next);
-					},
-					isBlockeeAdminOrMod: function (next) {
-						User.isAdminOrGlobalMod(blockeeUid, next);
-					},
-				}, next);
-			},
-			function (results, next) {
-				if (results.isBlockeeAdminOrMod) {
-					return callback(null, false);
-				}
-				if (parseInt(callerUid, 10) !== parseInt(blockerUid, 10) && !results.isCallerAdminOrMod) {
-					return callback(null, false);
-				}
-				next(null, true);
-			},
-		], callback);
+		User.isAdminOrGlobalMod(uid, (err, can) => callback(err, !can));
 	};
 
 	User.blocks.list = function (uid, callback) {
-		if (User.blocks._cache.has(parseInt(uid, 10))) {
-			return setImmediate(callback, null, User.blocks._cache.get(parseInt(uid, 10)));
+		if (User.blocks._cache.has(uid)) {
+			return setImmediate(callback, null, User.blocks._cache.get(uid));
 		}
 
 		db.getSortedSetRange('uid:' + uid + ':blocked_uids', 0, -1, function (err, blocked) {
@@ -58,14 +35,10 @@ module.exports = function (User) {
 			}
 
 			blocked = blocked.map(uid => parseInt(uid, 10)).filter(Boolean);
-			User.blocks._cache.set(parseInt(uid, 10), blocked);
+			User.blocks._cache.set(uid, blocked);
 			callback(null, blocked);
 		});
 	};
-
-	pubsub.on('user:blocks:cache:del', function (uid) {
-		User.blocks._cache.del(uid);
-	});
 
 	User.blocks.add = function (targetUid, uid, callback) {
 		async.waterfall([
@@ -73,10 +46,10 @@ module.exports = function (User) {
 			async.apply(db.sortedSetAdd.bind(db), 'uid:' + uid + ':blocked_uids', Date.now(), targetUid),
 			async.apply(User.incrementUserFieldBy, uid, 'blocksCount', 1),
 			function (_blank, next) {
-				User.blocks._cache.del(parseInt(uid, 10));
-				pubsub.publish('user:blocks:cache:del', parseInt(uid, 10));
+				User.blocks._cache.del(uid);
 				setImmediate(next);
 			},
+			async.apply(User.blocks.list, uid),
 		], callback);
 	};
 
@@ -86,10 +59,10 @@ module.exports = function (User) {
 			async.apply(db.sortedSetRemove.bind(db), 'uid:' + uid + ':blocked_uids', targetUid),
 			async.apply(User.decrementUserFieldBy, uid, 'blocksCount', 1),
 			function (_blank, next) {
-				User.blocks._cache.del(parseInt(uid, 10));
-				pubsub.publish('user:blocks:cache:del', parseInt(uid, 10));
+				User.blocks._cache.del(uid);
 				setImmediate(next);
 			},
+			async.apply(User.blocks.list, uid),
 		], callback);
 	};
 

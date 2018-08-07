@@ -72,17 +72,15 @@ describe('Controllers', function () {
 			});
 		}
 		var message = utils.generateUUID();
-		var name = 'custom.tpl';
-		var tplPath = path.join(nconf.get('views_dir'), name);
+		var tplPath = path.join(nconf.get('views_dir'), 'custom.tpl');
 
-		before(function (done) {
+		before(function () {
 			plugins.registerHook('myTestPlugin', {
 				hook: 'action:homepage.get:custom',
 				method: hookMethod,
 			});
 
 			fs.writeFileSync(tplPath, message);
-			meta.templates.compileTemplate(name, message, done);
 		});
 
 		it('should load default', function (done) {
@@ -435,15 +433,6 @@ describe('Controllers', function () {
 
 	it('should load category rss feed', function (done) {
 		request(nconf.get('url') + '/category/' + cid + '.rss', function (err, res, body) {
-			assert.ifError(err);
-			assert.equal(res.statusCode, 200);
-			assert(body);
-			done();
-		});
-	});
-
-	it('should load topics rss feed', function (done) {
-		request(nconf.get('url') + '/topics.rss', function (err, res, body) {
 			assert.ifError(err);
 			assert.equal(res.statusCode, 200);
 			assert(body);
@@ -2162,6 +2151,7 @@ describe('Controllers', function () {
 			request(nconf.get('url') + '/api/compose', { json: true }, function (err, res, body) {
 				assert.ifError(err);
 				assert.equal(res.statusCode, 404);
+				console.log(body);
 
 				plugins.unregisterHook('myTestPlugin', 'filter:composer.build', hookMethod);
 				done();

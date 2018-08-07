@@ -60,7 +60,6 @@ function copyFile(src, dest, callback) {
 file.copyFile = (typeof fs.copyFile === 'function') ? fs.copyFile : copyFile;
 
 file.saveFileToLocal = function (filename, folder, tempPath, callback) {
-	console.log("Uploading file: " + filename);
 	/*
 	 * remarkable doesn't allow spaces in hyperlinks, once that's fixed, remove this.
 	 */

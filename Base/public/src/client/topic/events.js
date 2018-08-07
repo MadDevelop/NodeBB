@@ -159,8 +159,6 @@ define('forum/topic/events', [
 				});
 			});
 		}
-
-		postTools.removeMenu(components.get('post', 'pid', data.post.pid));
 	}
 
 	function tagsUpdated(tags) {

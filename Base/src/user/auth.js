@@ -150,6 +150,7 @@ module.exports = function (User) {
 
 		async.waterfall([
 			function (next) {
+				console.log(sessionId);
 				db.sessionStore.get(sessionId, function (err, sessionObj) {
 					next(err, sessionObj || null);
 				});

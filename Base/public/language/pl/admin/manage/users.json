@@ -18,13 +18,13 @@
 	"new": "Nowy użytkownik",
 
 	"pills.latest": "Nowi użytkownicy",
-	"pills.unvalidated": "Niezweryfikowani",
+	"pills.unvalidated": "Niezweryfikowany",
 	"pills.no-posts": "Brak postów",
 	"pills.top-posters": "Najwięcej postów",
 	"pills.top-rep": "Najwyższa reputacja",
-	"pills.inactive": "Nieaktywni",
+	"pills.inactive": "Nieaktywny",
 	"pills.flagged": "Najwięcej flag",
-	"pills.banned": "Zbanowani",
+	"pills.banned": "Zbanowany",
 	"pills.search": "Wyszukiwanie użytkowników",
 
 	"search.uid": "Po ID użytkownika",

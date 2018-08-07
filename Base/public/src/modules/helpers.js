@@ -185,10 +185,7 @@
 			}
 		}
 		return states.map(function (priv) {
-			var guestDisabled = ['groups:moderate', 'groups:posts:upvote', 'groups:posts:downvote'];
-			var disabled = member === 'guests' && guestDisabled.includes(priv.name);
-
-			return '<td class="text-center" data-privilege="' + priv.name + '"><input type="checkbox"' + (priv.state ? ' checked' : '') + (disabled ? ' disabled="disabled"' : '') + ' /></td>';
+			return '<td class="text-center" data-privilege="' + priv.name + '"><input type="checkbox"' + (priv.state ? ' checked' : '') + (member === 'guests' && priv.name === 'groups:moderate' ? ' disabled="disabled"' : '') + ' /></td>';
 		}).join('');
 	}
 

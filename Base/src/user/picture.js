@@ -137,8 +137,6 @@ module.exports = function (User) {
 				uploadProfileOrCover(filename, picture, next);
 			},
 			function (_uploadedImage, next) {
-				console.log(_uploadedImage)
-
 				uploadedImage = _uploadedImage;
 
 				User.setUserFields(data.uid, {

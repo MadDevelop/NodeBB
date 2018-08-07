@@ -36,6 +36,7 @@
     "allowPrivateGroups": 1,
     "unreadCutoff": 2,
     "bookmarkThreshold": 5,
+    "topicsPerList": 20,
     "autoDetectLang": 1,
     "min:rep:flag": 0,
     "notificationType_upvote": "notification",

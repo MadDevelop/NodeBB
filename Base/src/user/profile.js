@@ -223,8 +223,6 @@ module.exports = function (User) {
 						if (parseInt(meta.config.requireEmailConfirmation, 10) === 1 && newEmail) {
 							User.email.sendValidationEmail(uid, {
 								email: newEmail,
-								subject: '[[email:email.verify-your-email.subject]]',
-								template: 'verify_email',
 							});
 						}
 						User.setUserField(uid, 'email:confirmed', 0, next);
@@ -324,12 +322,12 @@ module.exports = function (User) {
 				if (parseInt(uid, 10) !== parseInt(data.uid, 10)) {
 					User.isAdministrator(uid, next);
 				} else {
-					User.isPasswordCorrect(uid, data.currentPassword, data.ip, next);
+					User.isPasswordCorrect(uid, data.currentPassword, next);
 				}
 			},
 			function (isAdminOrPasswordMatch, next) {
 				if (!isAdminOrPasswordMatch) {
-					return next(new Error('[[user:change_password_error_wrong_current]]'));
+					return next(new Error('[[error:change_password_error_wrong_current]]'));
 				}
 
 				User.hashPassword(data.newPassword, next);

@@ -1,10 +1,5 @@
 'use strict';
 
-window.cookie = function(name) {
-	var value = "; " + document.cookie;
-	var parts = value.split("; " + name + "=");
-	if (parts.length === 2) return parts.pop().split(";").shift();
-};
 
 var app = window.app || {};
 
@@ -41,6 +36,12 @@ app.cacheBuster = null;
 	});
 
 	app.load = function () {
+
+		if(params.idToken) {
+			window.location.replace(window.location.href.split("?")[0]);
+			return;
+		}
+
 		app.loadProgressiveStylesheet();
 
 		overrides.overrideTimeago();
@@ -176,10 +177,23 @@ app.cacheBuster = null;
 		});
 	};
 
-	app.handleInvalidSession = function () {
-		window.app.flags = app.flags || {};
-		window.app.flags._sessionRefresh = true;
-		window.location.replace(window.location.origin);
+	app.handleInvalidSession = function (host) {
+
+		if(host) {
+			app.flags = app.flags || {};
+			app.flags._sessionRefresh = true;
+			window.location.replace(window.location.href.split("?")[0]);
+			return;
+		}
+
+		if (app.flags && app.flags._sessionRefresh) {
+			return;
+		}
+
+
+
+		if(!host)
+			window.location.reload(true);
 	};
 
 	app.enterRoom = function (room, callback) {

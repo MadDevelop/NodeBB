@@ -33,9 +33,9 @@ app.isConnected = false;
 			setTimeout(socket.connect.bind(socket), parseInt(config.reconnectionDelay, 10) * 10);
 		});
 
-		socket.on('checkSession', function (uid) {
-			if (parseInt(uid, 10) !== parseInt(app.user.uid, 10)) {
-				app.handleInvalidSession();
+		socket.on('checkSession', function (data) {
+			if (parseInt(data.uid, 10) !== parseInt(app.user.uid, 10)) {
+				app.handleInvalidSession(data.host);
 			}
 		});
 
