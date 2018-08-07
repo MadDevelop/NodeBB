@@ -1,5 +1,10 @@
 'use strict';
 
+window.cookie = function(name) {
+	var value = "; " + document.cookie;
+	var parts = value.split("; " + name + "=");
+	if (parts.length === 2) return parts.pop().split(";").shift();
+};
 
 var app = window.app || {};
 
@@ -172,25 +177,9 @@ app.cacheBuster = null;
 	};
 
 	app.handleInvalidSession = function () {
-		if (app.flags && app.flags._sessionRefresh) {
-			return;
-		}
-
-		app.flags = app.flags || {};
-		app.flags._sessionRefresh = true;
-
-		require(['translator'], function (translator) {
-			translator.translate('[[error:invalid-session-text]]', function (translated) {
-				bootbox.alert({
-					title: '[[error:invalid-session]]',
-					message: translated,
-					closeButton: false,
-					callback: function () {
-						window.location.reload();
-					},
-				});
-			});
-		});
+		window.app.flags = app.flags || {};
+		window.app.flags._sessionRefresh = true;
+		window.location.replace(window.location.origin);
 	};
 
 	app.enterRoom = function (room, callback) {

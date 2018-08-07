@@ -3,13 +3,6 @@
   "url": "https://rspeer.org",
   "library": "./index.js",
   "hooks": [
-    { "hook": "filter:uploadImage", "method": "onImageUpload" },
-    { "hook": "filter:router.page", "method": "onLogin" }
-  ],
-  "staticDirs": {
-    "static": "./static"
-  },
-  "scripts" : [
-    "static/lib/rspeer.js"
+    { "hook": "filter:uploadImage", "method": "onImageUpload" }
   ]
 }
