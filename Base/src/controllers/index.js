@@ -86,108 +86,15 @@ Controllers.reset = function (req, res, next) {
 };
 
 Controllers.login = function (req, res, next) {
-	var data = {};
-	var loginStrategies = require('../routes/authentication').getLoginStrategies();
-	var registrationType = meta.config.registrationType || 'normal';
-
-	var allowLoginWith = (meta.config.allowLoginWith || 'username-email');
-	var returnTo = (req.headers['x-return-to'] || '').replace(nconf.get('base_url'), '');
-
-	var errorText;
-	if (req.query.error === 'csrf-invalid') {
-		errorText = '[[error:csrf-invalid]]';
-	} else if (req.query.error) {
-		errorText = validator.escape(String(req.query.error));
-	}
-
-	if (returnTo) {
-		req.session.returnTo = returnTo;
-	}
-
-	data.alternate_logins = loginStrategies.length > 0;
-	data.authentication = loginStrategies;
-	data.allowLocalLogin = parseInt(meta.config.allowLocalLogin, 10) === 1 || parseInt(req.query.local, 10) === 1;
-	data.allowRegistration = registrationType === 'normal' || registrationType === 'admin-approval' || registrationType === 'admin-approval-ip';
-	data.allowLoginWith = '[[login:' + allowLoginWith + ']]';
-	data.breadcrumbs = helpers.buildBreadcrumbs([{
-		text: '[[global:login]]',
-	}]);
-	data.error = req.flash('error')[0] || errorText;
-	data.title = '[[pages:login]]';
-
-	if (!data.allowLocalLogin && !data.allowRegistration && data.alternate_logins && data.authentication.length === 1) {
-		if (res.locals.isAPI) {
-			return helpers.redirect(res, {
-				external: nconf.get('relative_path') + data.authentication[0].url,
-			});
-		}
-		return res.redirect(nconf.get('relative_path') + data.authentication[0].url);
-	}
-	if (req.loggedIn) {
-		user.getUserFields(req.uid, ['username', 'email'], function (err, user) {
-			if (err) {
-				return next(err);
-			}
-			data.username = allowLoginWith === 'email' ? user.email : user.username;
-			data.alternate_logins = false;
-			res.render('login', data);
-		});
-	} else {
-		res.render('login', data);
-	}
+	const auth = nconf.get('ssoPath');
+	const url = nconf.get('url');
+	res.render("redirect", {redirectUrl : `${auth}?redirect=${url}`})
 };
 
 Controllers.register = function (req, res, next) {
-	var registrationType = meta.config.registrationType || 'normal';
-
-	if (registrationType === 'disabled') {
-		return next();
-	}
-
-	var errorText;
-	if (req.query.error === 'csrf-invalid') {
-		errorText = '[[error:csrf-invalid]]';
-	}
-
-	async.waterfall([
-		function (next) {
-			if (registrationType === 'invite-only' || registrationType === 'admin-invite-only') {
-				user.verifyInvitation(req.query, next);
-			} else {
-				next();
-			}
-		},
-		function (next) {
-			plugins.fireHook('filter:parse.post', {
-				postData: {
-					content: meta.config.termsOfUse || '',
-				},
-			}, next);
-		},
-		function (termsOfUse) {
-			var loginStrategies = require('../routes/authentication').getLoginStrategies();
-			var data = {
-				'register_window:spansize': loginStrategies.length ? 'col-md-6' : 'col-md-12',
-				alternate_logins: !!loginStrategies.length,
-			};
-
-			data.authentication = loginStrategies;
-
-			data.minimumUsernameLength = parseInt(meta.config.minimumUsernameLength, 10);
-			data.maximumUsernameLength = parseInt(meta.config.maximumUsernameLength, 10);
-			data.minimumPasswordLength = parseInt(meta.config.minimumPasswordLength, 10);
-			data.minimumPasswordStrength = parseInt(meta.config.minimumPasswordStrength || 1, 10);
-			data.termsOfUse = termsOfUse.postData.content;
-			data.breadcrumbs = helpers.buildBreadcrumbs([{
-				text: '[[register:register]]',
-			}]);
-			data.regFormEntry = [];
-			data.error = req.flash('error')[0] || errorText;
-			data.title = '[[pages:register]]';
-
-			res.render('register', data);
-		},
-	], next);
+	const auth = nconf.get('ssoPath');
+	const url = nconf.get('url');
+	res.render("redirect", {redirectUrl : `${auth}?redirect=${url}`})
 };
 
 Controllers.registerInterstitial = function (req, res, next) {
