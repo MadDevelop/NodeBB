@@ -18,7 +18,7 @@ module.exports = function (middleware) {
 		}
 		const apiUrl = nconf.get('rspeerApi');
 		const request = require('request');
-
+		console.log("Attempting to login.")
 		request(`${apiUrl}/user/me`, {
 			headers: {
 				'Authorization': `bearer ${req.query.idToken}`
@@ -29,6 +29,7 @@ module.exports = function (middleware) {
 				next();
 			}
 			const parsed = JSON.parse(data.body);
+			console.log(parsed);
 			if (!data || !data.body || !parsed.email) {
 				next();
 			}
